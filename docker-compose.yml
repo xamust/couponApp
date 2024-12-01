@@ -62,13 +62,6 @@ services:
         aliases:
           - back
 
-#  wait-for-postgres.sh:
-#    image: busybox
-#    container_name: wait-for-postgres.sh
-#    command: ["/bin/sh", "-c", "until pg_isready; do sleep 1; done"]
-#    networks:
-#      - my_network
-
   postgres:
     image: postgres:15
     container_name: postgres
