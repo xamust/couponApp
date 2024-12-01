@@ -1,2 +1,5 @@
+## API: http://localhost/admin/index.html
 
-без логирования (адекватного)
+## Web: http://localhost
+
+### без логирования (адекватного)
