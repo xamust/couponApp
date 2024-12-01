@@ -32,4 +32,4 @@ yarn-error.log*
 /config/.env*
 !/config/.env.default
 back/config/*.yml
-back/.env
+.env
