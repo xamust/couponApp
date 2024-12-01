@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
     Table,
     TableBody,
@@ -10,6 +10,10 @@ import {
     Button,
     Typography,
     Paper,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
     TextField,
     Box,
 } from "@mui/material";
@@ -24,29 +28,35 @@ const CouponManager = () => {
         name: "",
         reward: "",
         maxRedemptions: 0,
+        timesRedeemed: 0,
         redeemBy: "",
     });
+    const [openCreateCoupon, setOpenCreateCoupon] = useState(false);
     const [error, setError] = useState("");
 
-    const fetchCoupons = async (page, rowsPerPage) => {
+    const fetchCoupons = useCallback(async (page, rowsPerPage) => {
         try {
             const offset = page * rowsPerPage;
             const response = await getCoupons(rowsPerPage, offset);
-            const data = response.data;
-            setCoupons(data || []);
+            setCoupons(response.data || []);
 
+            // костыль :(
             const resp2 = await getCoupons(0, 0);
             setTotalCoupons(resp2.data.length || 0);
 
             setError("");
         } catch (error) {
-            if (error.response) {
-                setError(error.response.data.message || "Ошибка сервера");
-            } else if (error.request) {
-                setError("Не удалось связаться с сервером");
-            } else {
-                setError("Произошла ошибка: " + error.message);
-            }
+            handleError(error);
+        }
+    }, []);
+
+    const handleError = (error) => {
+        if (error.response) {
+            setError(error.response.data.message || "Ошибка сервера");
+        } else if (error.request) {
+            setError("Не удалось связаться с сервером");
+        } else {
+            setError("Произошла ошибка: " + error.message);
         }
     };
 
@@ -60,17 +70,12 @@ const CouponManager = () => {
                 delete couponData.redeemBy;
             }
             await createCoupon(couponData);
-            setNewCoupon({ name: "", reward: "", maxRedemptions: 0, redeemBy: "" });
+            setNewCoupon({ name: "", reward: "", maxRedemptions: 0, timesRedeemed: 0, redeemBy: "" });
+            setOpenCreateCoupon(false);
             fetchCoupons(page, rowsPerPage);
             setError("");
         } catch (error) {
-            if (error.response) {
-                setError(error.response.data.message || "Ошибка сервера");
-            } else if (error.request) {
-                setError("Не удалось связаться с сервером");
-            } else {
-                setError("Произошла ошибка: " + error.message);
-            }
+            handleError(error);
         }
     };
 
@@ -80,13 +85,7 @@ const CouponManager = () => {
             fetchCoupons(page, rowsPerPage);
             setError("");
         } catch (error) {
-            if (error.response) {
-                setError(error.response.data.message || "Ошибка сервера");
-            } else if (error.request) {
-                setError("Не удалось связаться с сервером");
-            } else {
-                setError("Произошла ошибка: " + error.message);
-            }
+            handleError(error);
         }
     };
 
@@ -102,7 +101,7 @@ const CouponManager = () => {
 
     useEffect(() => {
         fetchCoupons(page, rowsPerPage);
-    }, [page, rowsPerPage]);
+    }, [page, rowsPerPage, fetchCoupons]);
 
     return (
         <Box>
@@ -110,12 +109,7 @@ const CouponManager = () => {
                 Список купонов
             </Typography>
             {error && (
-                <Typography
-                    color="error"
-                    variant="body1"
-                    align="center"
-                    gutterBottom
-                >
+                <Typography color="error" variant="body1" align="center" gutterBottom>
                     {error}
                 </Typography>
             )}
@@ -126,6 +120,7 @@ const CouponManager = () => {
                             <TableCell>Название</TableCell>
                             <TableCell>Награда</TableCell>
                             <TableCell>Макс. Использований</TableCell>
+                            <TableCell>Использовано</TableCell>
                             <TableCell>Срок действия</TableCell>
                             <TableCell>Действия</TableCell>
                         </TableRow>
@@ -137,6 +132,7 @@ const CouponManager = () => {
                                     <TableCell>{coupon.name}</TableCell>
                                     <TableCell>{coupon.reward}</TableCell>
                                     <TableCell>{coupon.maxRedemptions}</TableCell>
+                                    <TableCell>{coupon.timesRedeemed}</TableCell>
                                     <TableCell>
                                         {coupon.redeemBy
                                             ? new Date(coupon.redeemBy).toLocaleDateString()
@@ -172,58 +168,80 @@ const CouponManager = () => {
                 onRowsPerPageChange={handleChangeRowsPerPage}
                 rowsPerPageOptions={[5, 10, 25, 50, 100]}
             />
-            <Box mt={4}>
-                <Typography variant="h6">Добавить новый купон</Typography>
-                <TextField
-                    label="Название"
-                    fullWidth
-                    margin="normal"
-                    value={newCoupon.name}
-                    onChange={(e) =>
-                        setNewCoupon({ ...newCoupon, name: e.target.value })
-                    }
-                />
-                <TextField
-                    label="Награда"
-                    fullWidth
-                    margin="normal"
-                    value={newCoupon.reward}
-                    onChange={(e) =>
-                        setNewCoupon({ ...newCoupon, reward: e.target.value })
-                    }
-                />
-                <TextField
-                    label="Макс. Использований"
-                    type="number"
-                    fullWidth
-                    margin="normal"
-                    value={newCoupon.maxRedemptions}
-                    onChange={(e) =>
-                        setNewCoupon({
-                            ...newCoupon,
-                            maxRedemptions: parseInt(e.target.value, 10),
-                        })
-                    }
-                />
-                <TextField
-                    label="Срок действия (YYYY-MM-DD)"
-                    type="date"
-                    fullWidth
-                    margin="normal"
-                    InputLabelProps={{ shrink: true }}
-                    value={newCoupon.redeemBy}
-                    onChange={(e) =>
-                        setNewCoupon({ ...newCoupon, redeemBy: e.target.value })
-                    }
-                />
-                <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={handleCreateCoupon}
-                >
-                    Создать купон
-                </Button>
-            </Box>
+            <Button
+                variant="contained"
+                color="primary"
+                onClick={() => setOpenCreateCoupon(true)}
+                sx={{ mt: 2 }}
+            >
+                Создать купон
+            </Button>
+
+            <Dialog
+                open={openCreateCoupon}
+                onClose={() => setOpenCreateCoupon(false)}
+                fullWidth
+                maxWidth="sm"
+            >
+                <DialogTitle>Создать новый купон</DialogTitle>
+                <DialogContent>
+                    <TextField
+                        label="Название"
+                        fullWidth
+                        margin="normal"
+                        value={newCoupon.name}
+                        onChange={(e) =>
+                            setNewCoupon({ ...newCoupon, name: e.target.value })
+                        }
+                    />
+                    <TextField
+                        label="Награда"
+                        fullWidth
+                        margin="normal"
+                        value={newCoupon.reward}
+                        onChange={(e) =>
+                            setNewCoupon({ ...newCoupon, reward: e.target.value })
+                        }
+                    />
+                    <TextField
+                        label="Макс. Использований"
+                        type="number"
+                        fullWidth
+                        margin="normal"
+                        value={newCoupon.maxRedemptions}
+                        onChange={(e) =>
+                            setNewCoupon({
+                                ...newCoupon,
+                                maxRedemptions: parseInt(e.target.value, 10),
+                            })
+                        }
+                    />
+                    <TextField
+                        label="Срок действия (YYYY-MM-DD)"
+                        type="date"
+                        fullWidth
+                        margin="normal"
+                        InputLabelProps={{ shrink: true }}
+                        value={newCoupon.redeemBy}
+                        onChange={(e) =>
+                            setNewCoupon({ ...newCoupon, redeemBy: e.target.value })
+                        }
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setOpenCreateCoupon(false)} color="primary">
+                        Отмена
+                    </Button>
+                    <Button
+                        onClick={handleCreateCoupon}
+                        color="primary"
+                        variant="contained"
+                        disabled={!newCoupon.name.trim() || !newCoupon.reward.trim()}
+                    >
+                        Создать
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 };

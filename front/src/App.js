@@ -5,18 +5,16 @@ import UserManager from "./components/UserManager";
 
 function App() {
     return (
-        <Container>
+        <Container maxWidth="lg">
             <Typography variant="h4" align="center" gutterBottom>
                 Административная панель - Управление купонами
             </Typography>
-            <Grid container spacing={2}>
-                <Grid item xs={6}>
+                <Grid item xs={12} md={6}>
                     <UserManager />
                 </Grid>
-                <Grid item xs={6}>
+                <Grid item xs={12} md={6}>
                     <CouponManager />
                 </Grid>
-            </Grid>
         </Container>
     );
 }

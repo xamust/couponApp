@@ -22,14 +22,24 @@ import {
     MenuItem,
     FormControl,
     InputLabel,
+    TextField,
+    CircularProgress,
 } from "@mui/material";
-import {getUsers, deleteUser, getCouponByUserId, applyCoupon, getCoupons} from "../api";
+import {
+    createUser,
+    getUsers,
+    deleteUser,
+    getCouponByUserId,
+    applyCoupon,
+    getCoupons,
+} from "../api";
 
 const UserManager = () => {
     const [users, setUsers] = useState([]);
     const [totalUsers, setTotalUsers] = useState(0);
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
     // Состояние для модальных окон
@@ -42,21 +52,27 @@ const UserManager = () => {
     const [selectedUserId, setSelectedUserId] = useState(null);
     const [selectedCouponId, setSelectedCouponId] = useState("");
 
+    const [openCreateUser, setOpenCreateUser] = useState(false);
+    const [newUser, setNewUser] = useState({ name: "", metadata: "" });
+
     const fetchUsers = useCallback(async (page, rowsPerPage) => {
         try {
+            setLoading(true);
             const offset = page * rowsPerPage;
             const response = await getUsers(rowsPerPage, offset);
             setUsers(response.data || []);
 
-            const resp2 = await getUsers(0, 0); // Получить общее количество пользователей
+            // костыль :(
+            const resp2 = await getUsers(0, 0);
             setTotalUsers(resp2.data.length || 0);
 
             setError("");
         } catch (error) {
             handleError(error);
+        } finally {
+            setLoading(false);
         }
     }, []);
-
 
     const handleError = (error) => {
         if (error.response) {
@@ -74,6 +90,7 @@ const UserManager = () => {
             const response = await getCouponByUserId(userId);
             setSelectedUserCoupons(response.data || []);
             setOpenViewCoupons(true);
+            setError("");
         } catch (error) {
             handleError(error);
         }
@@ -82,11 +99,10 @@ const UserManager = () => {
     const handleOpenApplyCoupon = async (userId) => {
         try {
             setSelectedUserId(userId);
-
-            const availableResponse = await getCoupons(0,0);
+            const availableResponse = await getCoupons(0, 0);
             setAvailableCoupons(availableResponse.data || []);
-
             setOpenApplyCoupon(true);
+            setError("");
         } catch (error) {
             handleError(error);
         }
@@ -99,7 +115,6 @@ const UserManager = () => {
                 return;
             }
             await applyCoupon(selectedUserId, selectedCouponId);
-
             setSelectedCouponId("");
             setOpenApplyCoupon(false);
             setError("");
@@ -112,6 +127,7 @@ const UserManager = () => {
         try {
             await deleteUser(id);
             fetchUsers(page, rowsPerPage);
+            setError("");
         } catch (error) {
             handleError(error);
         }
@@ -125,6 +141,24 @@ const UserManager = () => {
         const newRowsPerPage = parseInt(event.target.value, 10);
         setRowsPerPage(newRowsPerPage);
         setPage(0);
+    };
+
+    const handleCreateUser = async () => {
+        try {
+            const metadata =
+                newUser.metadata.trim() === "" ? {} : JSON.parse(newUser.metadata);
+            await createUser({ name: newUser.name, metadata });
+            setOpenCreateUser(false);
+            setNewUser({ name: "", metadata: "" });
+            setError("");
+            fetchUsers(page, rowsPerPage);
+        } catch (error) {
+            if (error instanceof SyntaxError) {
+                setError("Метаданные должны быть валидным JSON!");
+            } else {
+                handleError(error);
+            }
+        }
     };
 
     useEffect(() => {
@@ -141,67 +175,127 @@ const UserManager = () => {
                     {error}
                 </Typography>
             )}
-            <TableContainer component={Paper}>
-                <Table>
-                    <TableHead>
-                        <TableRow>
-                            <TableCell>Имя</TableCell>
-                            <TableCell>Активен</TableCell>
-                            <TableCell>Действия</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {users.length > 0 ? (
-                            users.map((user) => (
-                                <TableRow key={user.id}>
-                                    <TableCell>{user.name}</TableCell>
-                                    <TableCell>{user.is_active ? "Да" : "Нет"}</TableCell>
-                                    <TableCell>
-                                        <Button
-                                            color="primary"
-                                            size="small"
-                                            onClick={() => handleViewCoupons(user.id)}
-                                        >
-                                            Посмотреть купоны
-                                        </Button>
-                                        <Button
-                                            color="secondary"
-                                            size="small"
-                                            onClick={() => handleOpenApplyCoupon(user.id)}
-                                        >
-                                            Применить купон
-                                        </Button>
-                                        <Button
-                                            color="error"
-                                            size="small"
-                                            onClick={() => handleDeleteUser(user.id)}
-                                        >
-                                            Удалить
-                                        </Button>
-                                    </TableCell>
+            {loading ? (
+                <Box display="flex" justifyContent="center" mt={4}>
+                    <CircularProgress />
+                </Box>
+            ) : (
+                <>
+                    <TableContainer component={Paper}>
+                        <Table>
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell>Имя</TableCell>
+                                    <TableCell>Активен</TableCell>
+                                    <TableCell>Действия</TableCell>
                                 </TableRow>
-                            ))
-                        ) : (
-                            <TableRow>
-                                <TableCell colSpan={3} align="center">
-                                    Пользователи не найдены
-                                </TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-            </TableContainer>
-            <TablePagination
-                component="div"
-                count={totalUsers}
-                page={page}
-                onPageChange={handleChangePage}
-                rowsPerPage={rowsPerPage}
-                onRowsPerPageChange={handleChangeRowsPerPage}
-                rowsPerPageOptions={[5, 10, 25, 50, 100]}
-            />
+                            </TableHead>
+                            <TableBody>
+                                {users.length > 0 ? (
+                                    users.map((user) => (
+                                        <TableRow key={user.id}>
+                                            <TableCell>{user.name}</TableCell>
+                                            <TableCell>{user.is_active ? "Да" : "Нет"}</TableCell>
+                                            <TableCell>
+                                                <Button
+                                                    color="primary"
+                                                    size="small"
+                                                    onClick={() => handleViewCoupons(user.id)}
+                                                >
+                                                    Посмотреть купоны
+                                                </Button>
+                                                <Button
+                                                    color="secondary"
+                                                    size="small"
+                                                    onClick={() => handleOpenApplyCoupon(user.id)}
+                                                >
+                                                    Применить купон
+                                                </Button>
+                                                <Button
+                                                    color="error"
+                                                    size="small"
+                                                    onClick={() => handleDeleteUser(user.id)}
+                                                >
+                                                    Удалить
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={3} align="center">
+                                            Пользователи не найдены
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                    <TablePagination
+                        component="div"
+                        count={totalUsers}
+                        page={page}
+                        onPageChange={handleChangePage}
+                        rowsPerPage={rowsPerPage}
+                        onRowsPerPageChange={handleChangeRowsPerPage}
+                        rowsPerPageOptions={[5, 10, 25, 50, 100]}
+                    />
+                </>
+            )}
+            <Button
+                variant="contained"
+                color="primary"
+                onClick={() => setOpenCreateUser(true)}
+                sx={{ mt: 2 }}
+            >
+                Создать пользователя
+            </Button>
 
-            {/* Модальное окно для просмотра применённых купонов */}
+            <Dialog
+                open={openCreateUser}
+                onClose={() => setOpenCreateUser(false)}
+                fullWidth
+                maxWidth="sm"
+            >
+                <DialogTitle>Создать нового пользователя</DialogTitle>
+                <DialogContent>
+                    <TextField
+                        label="Имя пользователя"
+                        fullWidth
+                        margin="normal"
+                        value={newUser.name}
+                        onChange={(e) =>
+                            setNewUser({ ...newUser, name: e.target.value })
+                        }
+                    />
+                    <TextField
+                        label="Метаданные (JSON)"
+                        fullWidth
+                        margin="normal"
+                        multiline
+                        rows={4}
+                        placeholder='Например, {"key": "value"}'
+                        value={newUser.metadata}
+                        onChange={(e) =>
+                            setNewUser({ ...newUser, metadata: e.target.value })
+                        }
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setOpenCreateUser(false)} color="primary">
+                        Отмена
+                    </Button>
+                    <Button
+                        onClick={handleCreateUser}
+                        color="primary"
+                        variant="contained"
+                        disabled={!newUser.name.trim()}
+                    >
+                        Создать
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
             <Dialog
                 open={openViewCoupons}
                 onClose={() => setOpenViewCoupons(false)}
@@ -233,7 +327,6 @@ const UserManager = () => {
                 </DialogActions>
             </Dialog>
 
-            {/* Модальное окно для применения купона */}
             <Dialog
                 open={openApplyCoupon}
                 onClose={() => setOpenApplyCoupon(false)}
@@ -242,25 +335,20 @@ const UserManager = () => {
             >
                 <DialogTitle>Применить купон</DialogTitle>
                 <DialogContent>
-                    {availableCoupons.length > 0 ? (
-                        <FormControl fullWidth margin="normal">
-                            <InputLabel>Выберите купон</InputLabel>
-                            <Select
-                                value={selectedCouponId}
-                                onChange={(e) => setSelectedCouponId(e.target.value)}
-                            >
-                                {availableCoupons.map((coupon) => (
-                                    <MenuItem key={coupon.id} value={coupon.id}>
-                                        {coupon.name} - {coupon.reward}
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-                    ) : (
-                        <Typography color="textSecondary">
-                            Доступных купонов нет.
-                        </Typography>
-                    )}
+                    <FormControl fullWidth margin="normal">
+                        <InputLabel id="coupon-select-label">Выберите купон</InputLabel>
+                        <Select
+                            labelId="coupon-select-label"
+                            value={selectedCouponId}
+                            onChange={(e) => setSelectedCouponId(e.target.value)}
+                        >
+                            {availableCoupons.map((coupon) => (
+                                <MenuItem key={coupon.id} value={coupon.id}>
+                                    {coupon.name}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setOpenApplyCoupon(false)} color="primary">
