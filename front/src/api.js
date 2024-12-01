@@ -14,7 +14,7 @@ export const createCoupon = (couponData) => api.post("/coupon/create", couponDat
 export const deleteCoupon = (id) => api.delete(`/coupon/${id}`);
 
 // применение купона
-export const applyCoupon = (user_id,coupon_id) => api.post(`/coupon/apply/`,{user_id:user_id,coupon_id:coupon_id});
+export const applyCoupon = (user_id,coupon_id) => api.post(`/coupon/apply`,{user_id:user_id,coupon_id:coupon_id});
 
 // получение купона по user_id
 export const getCouponByUserId = (user_id) => api.get(`/coupon/apply/${user_id}`);
