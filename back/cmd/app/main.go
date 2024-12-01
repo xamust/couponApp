@@ -30,7 +30,7 @@ func init() {
 func main() {
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Errorf("panic: %v", err)
+			println(fmt.Sprintf("panic: %v", err))
 		}
 	}()
 	ctx := context.Background()
