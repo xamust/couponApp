@@ -1,0 +1,275 @@
+definitions:
+  github_com_xamust_couponApp_internal_adapter_api_v1_models.APICoupon:
+    properties:
+      createdAt:
+        type: string
+      deletedAt:
+        type: string
+      id:
+        type: string
+      maxRedemptions:
+        type: integer
+      metadata:
+        additionalProperties:
+          type: string
+        type: object
+      name:
+        type: string
+      redeemBy:
+        type: string
+      reward:
+        type: string
+      timesRedeemed:
+        type: integer
+      updatedAt:
+        type: string
+    type: object
+  github_com_xamust_couponApp_internal_adapter_api_v1_models.APICouponApplier:
+    properties:
+      coupon_id:
+        type: string
+      user_id:
+        type: string
+    required:
+    - coupon_id
+    - user_id
+    type: object
+  github_com_xamust_couponApp_internal_adapter_api_v1_models.APICouponList:
+    properties:
+      limit:
+        type: integer
+      offset:
+        type: integer
+    type: object
+  github_com_xamust_couponApp_internal_adapter_api_v1_models.APIUser:
+    properties:
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      metadata:
+        additionalProperties:
+          type: string
+        type: object
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  github_com_xamust_couponApp_internal_adapter_api_v1_models.APIUserList:
+    properties:
+      limit:
+        type: integer
+      offset:
+        type: integer
+    type: object
+  github_com_xamust_couponApp_internal_adapter_api_v1_models.NewAPICoupon:
+    properties:
+      maxRedemptions:
+        type: integer
+      metadata:
+        additionalProperties:
+          type: string
+        type: object
+      name:
+        type: string
+      redeemBy:
+        type: string
+      reward:
+        type: string
+    type: object
+  github_com_xamust_couponApp_internal_adapter_api_v1_models.NewAPIUser:
+    properties:
+      metadata:
+        additionalProperties:
+          type: string
+        example:
+          '{"key"': '"value"}'
+        type: object
+      name:
+        example: John Doe
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /api/v1/coupon:
+    post:
+      consumes:
+      - application/json
+      description: Метод для вывода списка купонов
+      parameters:
+      - description: Request Body, заполнять обязательно
+        in: body
+        name: requestBody
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_xamust_couponApp_internal_adapter_api_v1_models.APICouponList'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            items:
+              $ref: '#/definitions/github_com_xamust_couponApp_internal_adapter_api_v1_models.APICoupon'
+            type: array
+      tags:
+      - Coupon
+  /api/v1/coupon/:id:
+    delete:
+      consumes:
+      - application/json
+      description: Метод для удаления купона по ID
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/github_com_xamust_couponApp_internal_adapter_api_v1_models.APICoupon'
+      tags:
+      - Coupon
+    get:
+      consumes:
+      - application/json
+      description: Метод для поиска купона по ID
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/github_com_xamust_couponApp_internal_adapter_api_v1_models.APICoupon'
+      tags:
+      - Coupon
+  /api/v1/coupon/apply:
+    post:
+      consumes:
+      - application/json
+      description: Метод для применения купона к пользователю
+      parameters:
+      - description: Request Body, заполнять обязательно
+        in: body
+        name: requestBody
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_xamust_couponApp_internal_adapter_api_v1_models.APICouponApplier'
+      produces:
+      - application/json
+      responses: {}
+      tags:
+      - Coupon
+  /api/v1/coupon/apply/:id:
+    get:
+      consumes:
+      - application/json
+      description: Метод для поиска купона по UserID
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            items:
+              $ref: '#/definitions/github_com_xamust_couponApp_internal_adapter_api_v1_models.APICoupon'
+            type: array
+      tags:
+      - Coupon
+  /api/v1/coupon/create:
+    post:
+      consumes:
+      - application/json
+      description: Метод для создания купона
+      parameters:
+      - description: Request Body, заполнять обязательно
+        in: body
+        name: requestBody
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_xamust_couponApp_internal_adapter_api_v1_models.NewAPICoupon'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/github_com_xamust_couponApp_internal_adapter_api_v1_models.APICoupon'
+      tags:
+      - Coupon
+  /api/v1/user:
+    post:
+      consumes:
+      - application/json
+      description: Метод для вывода списка пользователей
+      parameters:
+      - description: Request Body, заполнять обязательно
+        in: body
+        name: requestBody
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_xamust_couponApp_internal_adapter_api_v1_models.APIUserList'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            items:
+              $ref: '#/definitions/github_com_xamust_couponApp_internal_adapter_api_v1_models.APIUser'
+            type: array
+      tags:
+      - User
+  /api/v1/user/:id:
+    delete:
+      consumes:
+      - application/json
+      description: Метод для удаления пользователя по ID
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/github_com_xamust_couponApp_internal_adapter_api_v1_models.APIUser'
+      tags:
+      - User
+    get:
+      consumes:
+      - application/json
+      description: Метод для поиска пользователя по ID
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/github_com_xamust_couponApp_internal_adapter_api_v1_models.APIUser'
+      tags:
+      - User
+  /api/v1/user/create:
+    post:
+      consumes:
+      - application/json
+      description: Метод для создания пользователя
+      parameters:
+      - description: Request Body, заполнять обязательно
+        in: body
+        name: requestBody
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_xamust_couponApp_internal_adapter_api_v1_models.NewAPIUser'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/github_com_xamust_couponApp_internal_adapter_api_v1_models.APIUser'
+      tags:
+      - User
+swagger: "2.0"
