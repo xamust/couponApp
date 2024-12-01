@@ -152,7 +152,7 @@ func (co *couponAPIv1) ApplyCoupon(c echo.Context) error {
 	ctx = customLog.WithCouponID(ctx, reqModel.CouponID)
 	ctx = customLog.WithUserID(ctx, reqModel.UserID)
 	slog.InfoContext(ctx, "ApplyCoupon started")
-	if err := co.applier.Applier(ctx, reqModel.UserID, reqModel.CouponID); err != nil {
+	if err := co.applier.Applier(ctx, reqModel.CouponID, reqModel.UserID); err != nil {
 		slog.ErrorContext(customLog.ErrorCtx(ctx, err), "Error: "+err.Error())
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
