@@ -1,0 +1,15 @@
+linters:
+  disable-all: true
+  enable:
+    - goimports
+    - gofmt
+    - ginkgolinter
+    - golint
+    - gocritic
+    - goconst
+    - gocyclo
+    - gosimple
+    - govet
+    - errcheck
+issues:
+  exclude-use-default: false
